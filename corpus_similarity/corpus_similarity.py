@@ -78,12 +78,12 @@ FEATURE_DICT = {'jpn': ('char_wb', 3),
 #In-Domain Features (twitter, web, wikipedia)
 IN_DOMAIN_PATH = os.path.join("in_domain_features")
 if not os.path.isdir( IN_DOMAIN_PATH ) :
-    IN_DOMAIN_PATH = Path(__file__).parent / os.path.join(IN_DOMAIN_PATH)
+    IN_DOMAIN_PATH = Path(__file__).parent / os.path.join(".", IN_DOMAIN_PATH)
 
 #Out-of-Domain Features (bibles, subtitles, news)
 OUT_OF_DOMAIN_PATH = os.path.join("out_of_domain_features")
 if not os.path.isdir( OUT_OF_DOMAIN_PATH ) :
-    OUT_OF_DOMAIN_PATH = Path(__file__).parent / os.path.join(OUT_OF_DOMAIN_PATH)
+    OUT_OF_DOMAIN_PATH = Path(__file__).parent / os.path.join(".", OUT_OF_DOMAIN_PATH)
 
 #Number of features
 N_FEATURES = "5k"

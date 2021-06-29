@@ -1,0 +1,9 @@
+include LICENSE.txt
+include README.md
+include setup.py
+include setup.cfg
+include MANIFEST.in
+
+graft corpus_similarity/in_domain_features
+graft corpus_similarity/out_of_domain_features
+graft corpus_similarity/threshold_values

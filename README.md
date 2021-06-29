@@ -19,6 +19,8 @@ The output is a scalar measure of how similar the two corpora are. The values fa
 
 # Installation
 
+    pip install corpus_similarity
+
     pip install git+https://github.com/jonathandunn/corpus_similarity.git
     
 # Languages
