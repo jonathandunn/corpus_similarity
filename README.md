@@ -24,31 +24,57 @@ The output is a scalar measure of how similar the two corpora are. The values fa
 # Languages
 
 Code, Name
+
 vie,	Vietnamese
+
 ind,	Indonesian
+
 tgl,	Tagalog
+
 tam,	Tamil
+
 tel,	Telugu
+
 bul,	Bulgarian
+
 ces,	Czech
+
 lav,	Latvian
+
 pol,	Polish
+
 rus,	Russian
+
 slv,	Slovenian
+
 ukr,	Ukrainian
+
 dan,	Danish
+
 deu,	German
+
 eng,	English
+
 nld,	Dutch
+
 nor,	Norwegian
+
 swe,	Swedish
+
 ell,	Greek
+
 fas,	Farsi
+
 hin,	Hindi
+
 urd,	Urdu
+
 cat,	Catalan
+
 fra,	French
+
 glg,	Galician
+
 ita,	Italian
 por,	Portuguese
 ron,	Romanian
