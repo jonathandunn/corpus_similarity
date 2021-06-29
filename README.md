@@ -23,7 +23,25 @@ The output is a scalar measure of how similar the two corpora are. The values fa
     
 # Languages
 
-Code, Name
+**Pacific Languages**
+
+haw,    Hawaiian (Polynesian)
+
+mri,    te reo (Polynesian)
+
+smo,    Samoan (Polynesian)
+
+ton,    Tongan (Polynesian)
+
+ceb,    Cebuano (Austronesian)
+
+mlg,    Malagasy (Austronesian)
+
+msa,    Malay (Austronesian)
+
+tgl,    Tagalog (Austronesian)
+
+**Other Languages**
 
 vie,	Vietnamese
 
