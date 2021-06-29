@@ -2,130 +2,228 @@ import os
 import codecs
 import gzip
 import re
-from cleantext import clean
-import tinysegmenter
-import jieba
-from pythainlp import word_tokenize
-
+import json
 import random
 import math
+from pathlib import Path
 import numpy as np
+from cleantext import clean
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy.stats import rankdata
 from scipy.stats import chisquare
 from scipy.stats import spearmanr
 from scipy.spatial import distance
 
+#Constants
+SPACELESS_LANGS = ["jpn", "zho", "tha", "tam"]
 
+#Best features per supported language
+FEATURE_DICT = {'jpn': ('char_wb', 3),
+                'zho': ('char_wb', 3),
+                'bul': ('char_wb', 4),
+                'cat': ('char_wb', 4),
+                'ces': ('char_wb', 4),
+                'dan': ('char_wb', 4),
+                'deu': ('char_wb', 4),
+                'ell': ('char_wb', 4),
+                'eng': ('char_wb', 4),
+                'fin': ('char_wb', 4),
+                'glg': ('char_wb', 4),
+                'heb': ('char_wb', 4),
+                'hin': ('char_wb', 4),
+                'hun': ('char_wb', 4),
+                'kor': ('char_wb', 4),
+                'lav': ('char_wb', 4),
+                'nld': ('char_wb', 4),
+                'nor': ('char_wb', 4),
+                'pol': ('char_wb', 4),
+                'ron': ('char_wb', 4),
+                'rus': ('char_wb', 4),
+                'slv': ('char_wb', 4),
+                'swe': ('char_wb', 4),
+                'tam': ('char_wb', 4),
+                'tel': ('char_wb', 4),
+                'tha': ('char_wb', 4),
+                'tur': ('char_wb', 4),
+                'ukr': ('char_wb', 4),
+                'urd': ('char_wb', 4),
+                'ara': ('word', 1),
+                'est': ('word', 1),
+                'fas': ('word', 1),
+                'fra': ('word', 1),
+                'ind': ('word', 1),
+                'ita': ('word', 1),
+                'por': ('word', 1),
+                'spa': ('word', 1),
+                'tgl': ('word', 1),
+                'vie': ('word', 2),
+                }
 
+#In-Domain Features (twitter, web, wikipedia)
+IN_DOMAIN_PATH = os.path.join("in_domain_features")
+if not os.path.isdir( IN_DOMAIN_PATH ) :
+    IN_DOMAIN_PATH = Path(__file__).parent / os.path.join(IN_DOMAIN_PATH)
+
+#Out-of-Domain Features (bibles, subtitles, news)
+OUT_OF_DOMAIN_PATH = os.path.join("out_of_domain_features")
+if not os.path.isdir( OUT_OF_DOMAIN_PATH ) :
+    OUT_OF_DOMAIN_PATH = Path(__file__).parent / os.path.join(OUT_OF_DOMAIN_PATH)
+
+#Number of features
+N_FEATURES = "5k"
+
+#===============================================================================
+class Similarity(object):
+
+    def __init__(self, language, threshold = 1000000, feature_source = "out"):
+
+        self.Load = Load(language, threshold)
+        self.language = language
+
+        if threshold < 10000:
+            print("\nWARNING: Corpus sizes below 10k words do not have verified accuracy.\n")
+
+        try:
+            self.text_feature = FEATURE_DICT[language][0]
+            self.n = FEATURE_DICT[language][1]
+
+        except Exception as e:
+            print("\nERROR: " + language + " is not currently supported.")
+            print(e)
+            sys.kill()
+
+        feature_file = language + "_" + N_FEATURES + "_" + feature_source.upper() + "_" + FEATURE_DICT[language][0][:4] + str(FEATURE_DICT[language][1]) + ".json"
+        
+        if feature_source == "in":
+            feature_file = os.path.join(IN_DOMAIN_PATH, feature_file)
+
+        elif feature_source == "out":
+            feature_file = os.path.join(OUT_OF_DOMAIN_PATH, feature_file)
+
+        else:
+            print("\nERROR: Feature source is not available.\n")
+            sys.kill()
+
+        with codecs.open(feature_file, "r", encoding = "utf-8") as fo:
+            feature_set = json.load(fo)
+            feature_set = list(feature_set[language].values())
+ 
+        #print("Loading " + feature_file)
+        self.vectorizer = CountVectorizer(analyzer = self.text_feature, ngram_range = (self.n, self.n), vocabulary = feature_set)
+
+    #--------------------------------------------------
+    def get_features(self, lines):
+    
+        X = self.vectorizer.transform(lines)  
+        fre_array = X.toarray()
+        fre_array_sum = np.sum(fre_array, axis=0)
+
+        return fre_array_sum
+
+    #--------------------------------------------------
+    def calculate(self, corpus1, corpus2):
+
+        lines1 = self.Load.load(corpus1)
+        lines2 = self.Load.load(corpus2)
+
+        features1 = self.get_features(lines1)
+        features2 = self.get_features(lines2)
+
+        value = spearmanr(features1, features2)[0]
+
+        return value
+
+#===============================================================================
 #Class for loading and cleaning text data
+
 class Load(object):
 
-	def __init__(self, language, threshold = 10000000):
+    def __init__(self, language, threshold = 1000000):
 
-		self.language = language
-		self.threshold = threshold
+        self.language = language
+        self.threshold = threshold
+        self.spaceless = False
 
-		if self.language == "jpn":
-			self.segmenter = tinysegmenter.TinySegmenter()
+        if self.language in SPACELESS_LANGS:
+            self.spaceless = True            
 
-		elif self.language == "zho":
-			self.tk = jieba.Tokenizer()
-			self.tk.initialize()
-			self.tk.lock = True
+    #--------------------------------------------------
+    def load(self, data):
 
-	#--------------------------------------------------
-	def load(self, data):
+        #Initialize holder
+        lines = []
 
-		#Initialize holder
-		lines = []
+        #Otherwise input is a list of strings
+        if isinstance(data, list):
+            lines = data
 
-		#Otherwise input is a list of strings
-		if isinstance(data, list):
-			lines = data
+        #Load text file
+        elif data.endswith(".txt"):
+            with codecs.open(data, "r", encoding = "utf-8", errors = "replace") as fo:
+                for line in fo:
+                    lines.append(line)
+        
+        #Load gzipped text file
+        elif data.endswith(".gz"):
+            with gzip.open(data, "r") as fo:
+                for line in fo:
+                    line = line.decode("utf-8", errors = "replace")
+                    lines.append(line)
 
-		#Load text file
-		elif data.endswith(".txt"):
-			with codecs.open(data, "r", encoding = "utf-8", errors = "replace") as fo:
-				for line in fo:
-					lines.append(line)
-		
-		#Load gzipped text file
-		elif data.endswith(".gz"):
-			with gzip.open(data, "r") as fo:
-				for line in fo:
-					line = line.decode("utf-8", errors = "replace")
-					lines.append(line)
+        #For each line, clean and prep
+        new_lines = []
+        counter = 0
 
-		#For each line, clean and prep
-		new_lines = []
-		counter = 0
+        for text in lines:
 
-		for text in lines:
+            #Check if still need more data
+            if counter < self.threshold and len(text) > 5:
 
-			#Check if still need more data
-			if counter < self.threshold and len(text) > 5:
+                #Now clean each line
+                text = clean(text,
+                                fix_unicode = True,
+                                to_ascii = False,
+                                lower = True,
+                                no_line_breaks = True,
+                                no_urls = True,
+                                no_emails = True,
+                                no_phone_numbers = True,
+                                no_numbers = True,
+                                no_digits = True,
+                                no_currency_symbols = True,
+                                no_punct = True,
+                                replace_with_punct = "",
+                                replace_with_url = "",
+                                replace_with_email = "",
+                                replace_with_phone_number = "",
+                                replace_with_number = "<NUM>",
+                                replace_with_digit = "0",
+                                replace_with_currency_symbol = "",
+                                )
+                                
+                #Spaceless
+                if self.spaceless == True:
+                    text = "".join(text.split())
 
-				#Split into words in jpn, zho, tha
-				if self.language == "jpn":
-					text = " ".join(self.segmenter.tokenize(text))
-					text = re.sub(r"\s+", " ", text)
-													
-				elif self.language == "zho":
-					text = [x for x in self.tk.cut(text, cut_all = True, HMM = True) if x != ""]
-					text = " ".join(text)
-					text = re.sub(r"\s+", " ", text)
-									
-				elif self.language == "tha":
-					text = word_tokenize(text, keep_whitespace = False)
-					text = " ".join(text)
-								
-				#Now clean each line
-				text = clean(text,
-								fix_unicode = True,
-								to_ascii = False,
-								lower = True,
-								no_line_breaks = True,
-								no_urls = True,
-								no_emails = True,
-								no_phone_numbers = True,
-								no_numbers = True,
-								no_digits = True,
-								no_currency_symbols = True,
-								no_punct = True,
-								replace_with_punct = "",
-								replace_with_url = "",
-								replace_with_email = "",
-								replace_with_phone_number = "",
-								replace_with_number = "<NUM>",
-								replace_with_digit = "0",
-								replace_with_currency_symbol = "",
-								)
-								
-				length = len(text.split())
-				counter += length
-				new_lines.append(text)
-							
-		return new_lines
-	#--------------------------------------------------
-	
-	
-
-	
-	
-	
-	
+                length = len(text.split())
+                counter += length
+                new_lines.append(text)
+                            
+        return new_lines
+    #--------------------------------------------------
+    
 #===============================================================================
 
 
 class training:
     
 
-    def __init__(self, filename):
+    def __init__(self, filename, language, threshold = 100000000):
         
+        
+        self.Load = Load(language = language, threshold = threshold)
         self.filename = filename
        
-
 
     #---------------------------------------------------------------------
     # 'subcorpus' function: split an original corpus (which is in big size) into some smaller subcorpora for training/validation
@@ -144,10 +242,8 @@ class training:
                 pass
         
         line_num = i
-
         word_num = 0
-        file = open(self.filename, encoding='utf-8')
-        all_lines = file.readlines()
+        all_lines = self.Load.load(self.filename)
 
         subcorpus_list = []
 
@@ -164,8 +260,14 @@ class training:
    
                 random_num = random.randint(0, line_num)
                 line_content = all_lines[random_num]
-                word_num_line = len(line_content.split())
-                word_num = word_num + word_num_line
+                
+                if self.Load.spaceless == True:
+                    word_num_line = len(line_content.split())
+                    word_num = word_num + word_num_line
+
+                elif self.Load.spaceless == False:
+                    word_num_line = len(line_content)    #==== characters numbers =====
+                    word_num = word_num + word_num_line
 
                 if word_num < corpusSize:
                     combine_lines = combine_lines  +  line_content
@@ -186,142 +288,6 @@ class training:
 
       
         return subcorpus_list
-
-
-
-
-
-
-
-    #---------------------------------------------------------------------
-    # Similar with the 'subcorpus' function:
-    # For languages of 'jpn', 'tam', 'tha', 'zho', to remove spaces between words
-    #---------------------------------------------------------------------
-    
-    def subcorpus_re_space(self, corpusSize, subcor_number):
-
-        with open(self.filename, encoding='utf-8') as f:
-            for i, l in enumerate(f):
-                pass
-        
-        line_num = i
-
-        word_num = 0
-        file = open(self.filename, encoding='utf-8')
-        all_lines = file.readlines()
-
-        subcorpus_list = []
-
-
-        for k in range(subcor_number):
-
-            combine_lines = ' '
-            word_num = 0
-            
-            while True:
-                if line_num < 1:
-                    print('No sufficient words left in the corpus!')
-                    break
-   
-                random_num = random.randint(0, line_num)
-                line_content = all_lines[random_num]
-                word_num_line = len(line_content.split())
-                word_num = word_num + word_num_line
-
-                # remove sapce for tam, zho, jpn, tha
-                line_content = line_content.replace(' ', '')
-                
-
-                if word_num < corpusSize:
-                    combine_lines = combine_lines  +  line_content
-                    del all_lines[random_num]
-                    line_num = line_num - 1
-                
-                else:
-                    combine_lines = combine_lines  +  line_content
-                    combine_lines = combine_lines.replace('\n', '')
-                    
-                    subcorpus_list.append(combine_lines)
-
-                    del all_lines[random_num]
-                    line_num = line_num - 1   
-                    break
-            
-            print('word_num:', word_num)
-
-      
-        return subcorpus_list
-
-
-
-
-
-
-
-    #---------------------------------------------------------------------
-    # Similar with the 'subcorpus' function:
-    # For languages of 'jpn', 'tam', 'tha', 'zho' which do not have spaces between characters, then the corpusSize is counted by characters. 
-    #---------------------------------------------------------------------
-
-
-
-    def subcorpus_spaceless(self, corpusSize, subcor_number):
-
-        with open(self.filename, encoding='utf-8') as f:
-            for i, l in enumerate(f):
-                pass
-        
-        line_num = i
-
-        word_num = 0
-        file = open(self.filename, encoding='utf-8')
-        all_lines = file.readlines()
-
-        subcorpus_list = []
-
-
-        for k in range(subcor_number):
-
-            combine_lines = ' '
-            word_num = 0
-            
-            while True:
-                if line_num < 1:
-                    print('No sufficient words left in the corpus!')
-                    break
-   
-                random_num = random.randint(0, line_num)
-                line_content = all_lines[random_num]
-                
-                # word_num_line = len(line_content.split()) #==== words numbers =====
-                
-                word_num_line = len(line_content)    #==== characters numbers =====
-                
-                word_num = word_num + word_num_line
-
-                if word_num < corpusSize:
-                    combine_lines = combine_lines  +  line_content
-                    del all_lines[random_num]
-                    line_num = line_num - 1
-                
-                else:
-                    combine_lines = combine_lines  +  line_content
-                    combine_lines = combine_lines.replace('\n', ' ')
-                    
-                    subcorpus_list.append(combine_lines)
-
-                    del all_lines[random_num]
-                    line_num = line_num - 1   
-                    break
-            
-            print('word_num:', word_num)
-
-      
-        return subcorpus_list
-
-
-
-
 
 
     #---------------------------------------------------------------------
@@ -479,12 +445,7 @@ class training:
                 
         # nCr(n,r): n=fre_array_num  r=2 
         return stat_list            
-            
-
-
-
-
-
+ 
 
     #---------------------------------------------------------------------
     # get the mean and standard deviation of a list of similarity values (stat_list )
@@ -502,9 +463,6 @@ class training:
 
         print("measure mean is {m} std is {s} with {l} pairs".format(m = stat_mean, s = stat_std, l = stat_len ))
         return stat_mean, stat_std 
-
-
-
 
 
     #---------------------------------------------------------------------
@@ -537,9 +495,7 @@ class training:
 
         return mid_v_same_vs_diff  
 
-    
-
-
+  
     #---------------------------------------------------------------------   
     # Using the trained_wordlist (stored in files) to adjust the frequency array of extracted features (wordlist) from test/validation set,
     # make sure the extracted wordlist and its frequency array correspond to the same order of the trained wordlist
@@ -570,11 +526,7 @@ class training:
                                   
         return test_fre_array_1
 
-    
-    
-
-
-
+ 
     #---------------------------------------------------------------------   
     #  Function 'get_ACC' generates the accuracy results by using the calculated similarity values (stat_list_same,  stat_list_diff) 
     #
@@ -634,10 +586,4 @@ class training:
         return ACC
 
 
-
-
-
-
 #==============================================================================================
-		
-	
