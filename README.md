@@ -76,16 +76,29 @@ fra,	French
 glg,	Galician
 
 ita,	Italian
+
 por,	Portuguese
+
 ron,	Romanian
+
 spa,	Spanish
+
 jpn,	Japanese
+
 kor,	Korean
+
 ara,	Arabic
+
 heb,	Hebrew
+
 zho,	Chinese
+
 tha,	Thai
+
 tur,	Turkish
+
 est,	Estonian
+
 fin,	Finnish
+
 hun,	Hungarian
