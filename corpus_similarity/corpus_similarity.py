@@ -18,8 +18,8 @@ from scipy.spatial import distance
 SPACELESS_LANGS = ["jpn", "zho", "tha", "tam"]
 
 #Best features per supported language
-FEATURE_DICT = {'jpn': ('char_wb', 3),
-                'zho': ('char_wb', 3),
+FEATURE_DICT = {'jpn': ('char_wb', 2),
+                'zho': ('char_wb', 2),
                 'bul': ('char_wb', 4),
                 'cat': ('char_wb', 4),
                 'ces': ('char_wb', 4),
