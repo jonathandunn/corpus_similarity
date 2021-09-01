@@ -640,7 +640,7 @@ class training:
     #
     # output: z_score: standardized similarity values 
     #         homo_mean, homo_var, homo_std: homogeneity estimate by mean, variation, standard deviation based
-    #                                        on the given similarity values of same register pairs (stat_list_same)      
+    #                                        on the z_scores of same register pairs (stat_list_same)      
     #---------------------------------------------------------------------
 
     
