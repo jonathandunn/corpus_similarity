@@ -625,4 +625,38 @@ class training:
         return ACC
 
 
+
+ 
+    #---------------------------------------------------------------------   
+    #  Function 'get_z_scores' standardize raw similarity values by z-scores, and calculate mean, variation,
+    #  and standard deviation using Bayesian approach (with a 90% confidence level). 
+    #
+    # stat_list_same: is a list containing similarity values of a number of pair of corpora from same registers
+    # stat_list_diff: is a list containing similarity values of a number of pair of corpora from different registers
+    #
+    #
+    # stat_list_same/stat_list_diff can be obtained by using the 'get_simi_values' function
+    #
+    #
+    # output: z_score: standardized similarity values 
+    #         homo_mean, homo_var, homo_std: homogeneity estimate by mean, variation, standard deviation based
+    #                                        on the given similarity values of same register pairs (stat_list_same)      
+    #---------------------------------------------------------------------
+
+    
+    def get_z_scores(self,  stat_list_same,  stat_list_diff ):
+
+        test_list = same_regi_list + diff_regi_list
+
+        z_score = stats.zscore(test_list)
+
+        homo_len = len(same_regi_list)
+
+        z_score_homo = z_score[0:homo_len]
+        homo_mean, homo_var, homo_std = stats.bayes_mvs(z_score_homo)   # using Bayesian approach
+        
+        return z_score, homo_mean, homo_var, homo_std
+
+
+      
 #==============================================================================================
