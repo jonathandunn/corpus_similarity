@@ -628,7 +628,7 @@ class training:
 
  
     #---------------------------------------------------------------------   
-    #  Function 'get_z_scores' standardize raw similarity values by z-scores, and calculate mean, variation,
+    #  Function 'get_z_scores' normalizes raw similarity values by z-scores, and calculate mean, variation,
     #  and standard deviation using Bayesian approach (with a 90% confidence level). 
     #
     # stat_list_same: is a list containing similarity values of a number of pair of corpora from same registers
@@ -638,7 +638,7 @@ class training:
     # stat_list_same/stat_list_diff can be obtained by using the 'get_simi_values' function
     #
     #
-    # output: z_score: standardized similarity values 
+    # output: z_score: normalized similarity values 
     #         homo_mean, homo_var, homo_std: homogeneity estimate by mean, variation, standard deviation based
     #                                        on the z_scores of same register pairs (stat_list_same)      
     #---------------------------------------------------------------------
