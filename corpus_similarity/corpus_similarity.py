@@ -13,6 +13,7 @@ from scipy.stats import rankdata
 from scipy.stats import chisquare
 from scipy.stats import spearmanr
 from scipy.spatial import distance
+from scipy import stats
 
 #Constants
 SPACELESS_LANGS = ["jpn", "zho", "tha", "tam"]
