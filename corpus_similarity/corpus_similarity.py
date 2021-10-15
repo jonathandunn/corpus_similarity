@@ -1,3 +1,13 @@
+from cleantext import clean
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import StandardScaler
+from scipy.stats import rankdata
+from scipy.stats import chisquare
+from scipy.stats import spearmanr
+from scipy.spatial import distance
+from scipy import stats
+from pathlib import Path
+import numpy as np
 import os
 import codecs
 import gzip
@@ -5,16 +15,6 @@ import re
 import json
 import random
 import math
-from pathlib import Path
-import numpy as np
-from cleantext import clean
-from sklearn.feature_extraction.text import CountVectorizer
-from scipy.stats import rankdata
-from scipy.stats import chisquare
-from scipy.stats import spearmanr
-from scipy.spatial import distance
-from scipy import stats
-
 #Constants
 SPACELESS_LANGS = ["jpn", "zho", "tha", "tam"]
 
@@ -118,6 +118,7 @@ class Similarity(object):
 
         self.Load = Load(language, threshold)
         self.language = language
+        self.scaler = self.get_scaler()
 
         if threshold < 10000:
             print("\nWARNING: Corpus sizes below 10k words do not have verified accuracy.\n")
@@ -150,6 +151,28 @@ class Similarity(object):
         #print("Loading " + feature_file)
         self.vectorizer = CountVectorizer(analyzer = self.text_feature, ngram_range = (self.n, self.n), vocabulary = feature_set)
 
+    def get_scaler(self):
+        """
+        Attempts to instantiate a StandarScaler based on pre fit values from path.
+        returns: scikit.StandarScaler or None.
+        """
+        scaler_path = os.path.join('scaler_values', '.'.join((self.language, 'json')))
+        scaler = None
+        if os.path.exists(scaler_path):
+            with open(scaler_path) as scaler_file_data:
+                scaler_data = json.load(scaler_file_data)
+                scaler = StandardScaler()
+                scaler.mean_ = scaler_data['mean_']
+                scaler.scale_ = scaler_data['scale_']
+        else:
+            print('WARNING: Scaler for this language is not in path, values will not be scaled.')
+        return scaler
+
+    def scale(self, values):
+        if self.scaler:
+            return self.scaler.transform([values, 1])
+        return values
+
     #--------------------------------------------------
     def get_features(self, lines):
     
@@ -158,6 +181,9 @@ class Similarity(object):
         fre_array_sum = np.sum(fre_array, axis=0)
 
         return fre_array_sum
+
+
+
 
     #--------------------------------------------------
     def calculate(self, corpus1, corpus2):
