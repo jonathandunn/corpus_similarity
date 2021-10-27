@@ -5,6 +5,7 @@ from scipy.stats import rankdata
 from scipy.stats import chisquare
 from scipy.stats import spearmanr
 from scipy.spatial import distance
+from collections import namedtuple
 from scipy import stats
 from pathlib import Path
 import numpy as np
@@ -111,52 +112,86 @@ if not os.path.isdir( OUT_OF_DOMAIN_PATH ) :
 #Number of features
 N_FEATURES = "5k"
 
+
+SimilarityCorpus = namedtuple('SimilarityCorpus', ['corpus', 'language'])
+
 #===============================================================================
+
 class Similarity(object):
 
-    def __init__(self, language, threshold = 1000000, feature_source = "out"):
+    languages = []
+    loads = {}
+    scalers = {}
+    vectorizers = {}
 
-        self.Load = Load(language, threshold)
-        self.language = language
-        self.scaler = self.get_scaler()
+    def __init__(self, languages, threshold=1000000, feature_source="out"):
+        if not isinstance(languages, list):
+            languages = ['eng']
+        self.languages = languages
+        self.get_languages_features(languages)
+        self.get_scalers()
 
-        if threshold < 10000:
+        self.feature_source = feature_source
+        self.threshold = threshold
+
+    def get_language_feature(self, language):
+        self.loads[language] = Load(language, self.threshold)
+
+        if self.threshold < 10000:
             print("\nWARNING: Corpus sizes below 10k words do not have verified accuracy.\n")
 
         try:
-            self.text_feature = FEATURE_DICT[language][0]
-            self.n = FEATURE_DICT[language][1]
+            text_feature = FEATURE_DICT[language][0]
+            n = FEATURE_DICT[language][1]
 
         except Exception as e:
             print("\nERROR: " + language + " is not currently supported.")
             print(e)
-            sys.kill()
+            exit()
 
-        feature_file = language + "_" + N_FEATURES + "_" + feature_source.upper() + "_" + FEATURE_DICT[language][0][:4] + str(FEATURE_DICT[language][1]) + ".json"
-        
-        if feature_source == "in":
+        feature_file = language + "_" + N_FEATURES + "_" + self.feature_source.upper() + "_" + FEATURE_DICT[language][0][
+                                                                                          :4] + str(
+            FEATURE_DICT[language][1]) + ".json"
+
+        if self.feature_source == "in":
             feature_file = os.path.join(IN_DOMAIN_PATH, feature_file)
-
-        elif feature_source == "out":
+        elif self.feature_source == "out":
             feature_file = os.path.join(OUT_OF_DOMAIN_PATH, feature_file)
-
         else:
             print("\nERROR: Feature source is not available.\n")
-            sys.kill()
+            exit()
 
-        with codecs.open(feature_file, "r", encoding = "utf-8") as fo:
+        with codecs.open(feature_file, "r", encoding="utf-8") as fo:
             feature_set = json.load(fo)
             feature_set = list(feature_set[language].values())
- 
-        #print("Loading " + feature_file)
-        self.vectorizer = CountVectorizer(analyzer = self.text_feature, ngram_range = (self.n, self.n), vocabulary = feature_set)
 
-    def get_scaler(self):
+        self.vectorizers[language] = CountVectorizer(analyzer=text_feature,
+                                                     ngram_range=(n, n),
+                                                     vocabulary=feature_set)
+    def get_languages_features(self, languages):
+        """
+        Wrapper function for get_language_features
+        :param language:
+        :return:
+        """
+        for language in languages:
+            self.get_language_feature(language)
+
+    def get_scalers(self, languages):
+        """
+        Wrapper function for get_scaler
+        :param language:
+        :return:
+        """
+        for language in languages:
+            self.set_scaler(language)
+
+    def set_scaler(self, language):
         """
         Attempts to instantiate a StandarScaler based on pre fit values from path.
         returns: scikit.StandarScaler or None.
         """
-        scaler_path = os.path.join('scaler_values', '.'.join((self.language, 'json')))
+        scaler_path = os.path.join('scaler_values', '.'.join((language, 'json')))
         scaler = None
         if os.path.exists(scaler_path):
             with open(scaler_path) as scaler_file_data:
@@ -165,34 +200,49 @@ class Similarity(object):
                 scaler.mean_ = scaler_data['mean_']
                 scaler.scale_ = scaler_data['scale_']
         else:
-            print('WARNING: Scaler for this language is not in path, values will not be scaled.')
-        return scaler
+            print('WARNING: Scaler for this language [{}] is not in path, values will not be scaled.'.format(language))
+        self.scalers[language] = scaler
 
-    def scale(self, values):
-        if self.scaler:
-            return self.scaler.transform([values, 1])
+    def scale(self, values, language):
+        if self.scalers[language]:
+            return self.scalers[language].transform([values, 1])
         return values
 
     #--------------------------------------------------
-    def get_features(self, lines):
+    def get_features(self, lines, language):
+        """
+        Returns Features.
+        :param lines:
+        :param language:
+        :return:
+        """
     
-        X = self.vectorizer.transform(lines)  
+        X = self.vectorizers[language].transform(lines)
         fre_array = X.toarray()
         fre_array_sum = np.sum(fre_array, axis=0)
 
         return fre_array_sum
 
+    def get_corpus_metadata(self, corpus):
+        """
+        Returns corpus metadata in case it is a SimilarityCorpus object
+        :param corpus:
+        :return:
+        """
+        if isinstance(corpus, SimilarityCorpus):
+            return corpus.corpus, corpus.language
+        return corpus, 'eng'
 
-
-
-    #--------------------------------------------------
+    #-------------------------------------------------
     def calculate(self, corpus1, corpus2):
+        corpus1, language1 = self.get_corpus_metadata(corpus1)
+        corpus2, language2 = self.get_corpus_metadata(corpus2)
 
-        lines1 = self.Load.load(corpus1)
-        lines2 = self.Load.load(corpus2)
+        lines1 = self.loads[language1].load(corpus1)
+        lines2 = self.loads[language2].load(corpus2)
 
-        features1 = self.get_features(lines1)
-        features2 = self.get_features(lines2)
+        features1 = self.get_features(lines1, language1)
+        features2 = self.get_features(lines2, language2)
 
         value = spearmanr(features1, features2)[0]
 
