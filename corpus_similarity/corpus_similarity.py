@@ -244,9 +244,13 @@ class Similarity(object):
         features1 = self.get_features(lines1, language1)
         features2 = self.get_features(lines2, language2)
 
-        value = spearmanr(features1, features2)[0]
+        features1 = spearmanr(features1)[0]
+        features2 = spearmanr(features2)[0]
 
-        return value
+        value = spearmanr(features1, features2)
+
+
+        return stats.bayes_mvs(value)
 
 #===============================================================================
 #Class for loading and cleaning text data
