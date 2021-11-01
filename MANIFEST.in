@@ -7,3 +7,4 @@ include MANIFEST.in
 graft corpus_similarity/in_domain_features
 graft corpus_similarity/out_of_domain_features
 graft corpus_similarity/threshold_values
+graft corpus_similarity/scaler_values

@@ -8,7 +8,7 @@ from scipy.stats import spearmanr
 from scipy.spatial import distance
 from scipy import stats
 from pathlib import Path
-from sampler import Sampler, SamplerDataframe
+from .sampler import Sampler
 import numpy as np
 import os
 import codecs
@@ -114,7 +114,7 @@ N_FEATURES = "5k"
 
 #Scaler values
 SCALER_PATH = os.path.join("scaler_values")
-if not os.path.isdir( OUT_OF_DOMAIN_PATH ) :
+if not os.path.isdir( SCALER_PATH ) :
     SCALER_PATH = Path(__file__).parent / os.path.join(".", SCALER_PATH)
 
 
@@ -170,12 +170,12 @@ class Similarity(object):
                                           vocabulary=feature_set)
 
 
-    def get_scaler(self, language):
+    def get_scaler(self):
         """
         Attempts to instantiate a StandarScaler based on pre fit values from path.
         returns: scikit.StandarScaler or None.
         """
-        scaler_path = os.path.join(SCALER_PATH, '.'.join((language, 'json')))
+        scaler_path = os.path.join(SCALER_PATH, '.'.join((self.language, 'json')))
         scaler = None
         if os.path.exists(scaler_path):
             with open(scaler_path) as scaler_file_data:
@@ -184,7 +184,7 @@ class Similarity(object):
                 scaler.mean_ = scaler_data['mean_']
                 scaler.scale_ = scaler_data['scale_']
         else:
-            print('WARNING: Scaler for this language [{}] is not in path, values will not be scaled.'.format(language))
+            print('WARNING: Scaler for this language [{}] is not in path, values will not be scaled.'.format(self.language))
         return scaler
 
     def scale(self, values):

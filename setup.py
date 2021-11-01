@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
 	name = "corpus_similarity",
-	version = "1.0.2",
+	version = "1.0.3",
 	author = "Jonathan Dunn, Haipeng Li",
 	author_email = "jonathan.dunn@canterbury.ac.nz",
 	description = ("Measuring corpus similarity in Python"),
@@ -17,7 +17,10 @@ setup(
 	url = "https://github.com/jonathandunn/corpus_similarity",
 	keywords = "text analytics, natural language processing, computational linguistics, corpus, corpora, similarity",
 	packages = find_packages(exclude=["*.pyc", "__pycache__"]),
-	package_data={'': ['corpus_similarity.in_domain_features.*', 'corpus_similarity.out_of_domain_features.*', 'corpus_similarity.threshold_values.*']},
+	package_data={'': ['corpus_similarity.in_domain_features.*',
+						'corpus_similarity.out_of_domain_features.*',
+						'corpus_similarity.threshold_values.*',
+						'corpus_similarity.scaler_values.*']},
 	install_requires=["cytoolz",
 						"numpy",
 						"clean-text",
