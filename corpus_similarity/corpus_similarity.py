@@ -135,7 +135,7 @@ class Similarity(object):
         self.get_scaler()
 
     def get_languages_features(self):
-        self.loads = Load(self.language, self.threshold)
+        self.Load = Load(self.language, self.threshold)
 
         if self.threshold < 10000:
             print("\nWARNING: Corpus sizes below 10k words do not have verified accuracy.\n")

@@ -24,6 +24,9 @@ class Sampler(object):
             df = df[~df['article_id'].isin(merged_data)]
         return df
 
+    def df_as_list(self, df):
+        return [str(x) for x in df.loc[:, 'Text'].values]
+
     def get_sample(self, amount, current_amount=None, current_df=None, acumulative_dfs=None):
         random_df = self.full_dataframes[random.randrange(0, len(self.full_dataframes))]
 
@@ -49,4 +52,4 @@ class Sampler(object):
                                    current_df=current_df,
                                    acumulative_dfs=acumulative_dfs)
 
-        return new_df
+        return self.df_as_list(new_df)
