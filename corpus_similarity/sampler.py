@@ -5,6 +5,7 @@ import random
 
 SamplerDataframe = namedtuple('SamplerDataframe', ['dataframe', 'mean_words'])
 
+
 class Sampler(object):
     language = None
     full_dataframes = []
@@ -20,7 +21,9 @@ class Sampler(object):
 
     def remove_extra_duplicates(self, df, acumulative_dfs):
         for a_df in acumulative_dfs:
-            merged_data = df.merge(a_df, how='inner', on='article_id')['article_id']
+            merged_data = df.merge(a_df,
+                                   how='inner',
+                                   on='article_id')['article_id']
             df = df[~df['article_id'].isin(merged_data)]
         return df
 
@@ -33,7 +36,7 @@ class Sampler(object):
         new_df = random_df.dataframe.sample(n=num_rows)
 
         if current_df is not None:
-             new_df = pd.concat([current_df, new_df]).drop_duplicates()
+            new_df = pd.concat([current_df, new_df]).drop_duplicates()
 
         new_df = self.remove_extra_duplicates(new_df, acumulative_dfs)
         sum_words = new_df['count'].sum()

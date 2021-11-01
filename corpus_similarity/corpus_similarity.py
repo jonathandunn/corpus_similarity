@@ -237,13 +237,17 @@ class Similarity(object):
         result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
         return scipy.stats.bayes_mvs(result)
 
-    def calculate_similiarity_unique(self, corpus1):
+    def calculate_similiarity_(self, corpora_list, chunk_size=20000, n_pairs=100):
         """
         same as corpus_similiartiy but with chunks of itself.
         :param corpus1:
         :return:
         """
-        pass
+        samples = self.get_samples(corpora_list, chunk_size, n_pairs*2)
+        sample1 = samples[:len(samples) // 2]
+        sample2 = samples[len(samples) // 2:]
+        result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
+        return scipy.stats.bayes_mvs(result)
 
     #-------------------------------------------------
     def calculate(self, corpus1, corpus2):
