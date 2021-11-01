@@ -221,6 +221,9 @@ class Similarity(object):
             acum.append(sample)
         return acum
 
+    def df_as_list(self, df):
+        return [str(x) for x in df.loc[:, 'Text'].values]
+
     def calculate_similarity(self, corpora_list1, corpora_list2, chunk_size=20000, n_pairs=100):
         """
         1- break corpora into 20k word subsets ( non overlapping ). (optional: add parameters with chunk size)
@@ -233,7 +236,8 @@ class Similarity(object):
         """
         sample1 = self.get_samples(corpora_list1, chunk_size, n_pairs)
         sample2 = self.get_samples(corpora_list2, chunk_size, n_pairs)
-        result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
+        result = [self.scale(self.calculate(self.df_as_list(sample1[i]),
+                                            self.df_as_list(sample2[i]))) for i in range(len(sample1))]
         return scipy.stats.bayes_mvs(result)
 
     def calculate_similiarity_unique(self, corpus1):
