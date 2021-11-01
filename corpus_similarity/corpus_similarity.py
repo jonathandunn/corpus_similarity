@@ -1,3 +1,4 @@
+import scipy.stats
 from cleantext import clean
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import StandardScaler
@@ -5,17 +6,16 @@ from scipy.stats import rankdata
 from scipy.stats import chisquare
 from scipy.stats import spearmanr
 from scipy.spatial import distance
-from collections import namedtuple
 from scipy import stats
 from pathlib import Path
+from sampler import Sampler, SamplerDataframe
 import numpy as np
 import os
 import codecs
 import gzip
-import re
 import json
 import random
-import math
+
 #Constants
 SPACELESS_LANGS = ["jpn", "zho", "tha", "tam"]
 
@@ -112,8 +112,11 @@ if not os.path.isdir( OUT_OF_DOMAIN_PATH ) :
 #Number of features
 N_FEATURES = "5k"
 
+#Scaler values
+SCALER_PATH = os.path.join("scaler_values")
+if not os.path.isdir( OUT_OF_DOMAIN_PATH ) :
+    SCALER_PATH = Path(__file__).parent / os.path.join(".", SCALER_PATH)
 
-SimilarityCorpus = namedtuple('SimilarityCorpus', ['corpus', 'language'])
 
 #===============================================================================
 
@@ -124,34 +127,31 @@ class Similarity(object):
     scalers = {}
     vectorizers = {}
 
-    def __init__(self, languages, threshold=1000000, feature_source="out"):
-        if not isinstance(languages, list):
-            languages = ['eng']
-        self.languages = languages
-        self.get_languages_features(languages)
-        self.get_scalers()
-
+    def __init__(self, language, threshold=1000000, feature_source="out"):
         self.feature_source = feature_source
         self.threshold = threshold
+        self.language = language
+        self.get_languages_features()
+        self.get_scaler()
 
-    def get_language_feature(self, language):
-        self.loads[language] = Load(language, self.threshold)
+    def get_languages_features(self):
+        self.loads = Load(self.language, self.threshold)
 
         if self.threshold < 10000:
             print("\nWARNING: Corpus sizes below 10k words do not have verified accuracy.\n")
 
         try:
-            text_feature = FEATURE_DICT[language][0]
-            n = FEATURE_DICT[language][1]
+            text_feature = FEATURE_DICT[self.language][0]
+            n = FEATURE_DICT[self.language][1]
 
         except Exception as e:
-            print("\nERROR: " + language + " is not currently supported.")
+            print("\nERROR: " + self.language + " is not currently supported.")
             print(e)
             exit()
 
-        feature_file = language + "_" + N_FEATURES + "_" + self.feature_source.upper() + "_" + FEATURE_DICT[language][0][
+        feature_file = self.language + "_" + N_FEATURES + "_" + self.feature_source.upper() + "_" + FEATURE_DICT[self.language][0][
                                                                                           :4] + str(
-            FEATURE_DICT[language][1]) + ".json"
+            FEATURE_DICT[self.language][1]) + ".json"
 
         if self.feature_source == "in":
             feature_file = os.path.join(IN_DOMAIN_PATH, feature_file)
@@ -163,35 +163,19 @@ class Similarity(object):
 
         with codecs.open(feature_file, "r", encoding="utf-8") as fo:
             feature_set = json.load(fo)
-            feature_set = list(feature_set[language].values())
+            feature_set = list(feature_set[self.language].values())
 
-        self.vectorizers[language] = CountVectorizer(analyzer=text_feature,
-                                                     ngram_range=(n, n),
-                                                     vocabulary=feature_set)
-    def get_languages_features(self, languages):
-        """
-        Wrapper function for get_language_features
-        :param language:
-        :return:
-        """
-        for language in languages:
-            self.get_language_feature(language)
+        self.vectorizer = CountVectorizer(analyzer=text_feature,
+                                          ngram_range=(n, n),
+                                          vocabulary=feature_set)
 
-    def get_scalers(self, languages):
-        """
-        Wrapper function for get_scaler
-        :param language:
-        :return:
-        """
-        for language in languages:
-            self.set_scaler(language)
 
-    def set_scaler(self, language):
+    def get_scaler(self, language):
         """
         Attempts to instantiate a StandarScaler based on pre fit values from path.
         returns: scikit.StandarScaler or None.
         """
-        scaler_path = os.path.join('scaler_values', '.'.join((language, 'json')))
+        scaler_path = os.path.join(SCALER_PATH, '.'.join((language, 'json')))
         scaler = None
         if os.path.exists(scaler_path):
             with open(scaler_path) as scaler_file_data:
@@ -201,15 +185,15 @@ class Similarity(object):
                 scaler.scale_ = scaler_data['scale_']
         else:
             print('WARNING: Scaler for this language [{}] is not in path, values will not be scaled.'.format(language))
-        self.scalers[language] = scaler
+        return scaler
 
-    def scale(self, values, language):
-        if self.scalers[language]:
-            return self.scalers[language].transform([values, 1])
+    def scale(self, values):
+        if self.scaler:
+            return self.scaler.transform([values, 1])
         return values
 
     #--------------------------------------------------
-    def get_features(self, lines, language):
+    def get_features(self, lines):
         """
         Returns Features.
         :param lines:
@@ -217,40 +201,61 @@ class Similarity(object):
         :return:
         """
     
-        X = self.vectorizers[language].transform(lines)
+        X = self.vectorizer.transform(lines)
         fre_array = X.toarray()
         fre_array_sum = np.sum(fre_array, axis=0)
-
         return fre_array_sum
 
-    def get_corpus_metadata(self, corpus):
+    def get_samples(self, corpora_list, chunk_size, n):
         """
-        Returns corpus metadata in case it is a SimilarityCorpus object
+        :param corpora_list:
+        :param chunk_size:
+        :param n:
+        :return:
+        """
+        sampler = Sampler()
+        sampler.get_dataframes(corpora_list)
+        acum = []
+        for i in range(n):
+            sample = sampler.get_sample(chunk_size, acumulative_dfs=acum)
+            acum.append(sample)
+        return acum
+
+    def calculate_similarity(self, corpora_list1, corpora_list2, chunk_size=20000, n_pairs=100):
+        """
+        1- break corpora into 20k word subsets ( non overlapping ). (optional: add parameters with chunk size)
+        2- get a N amount of pairs, run calculate for each of this pair-chunks comparisons.
+        3- scale the array returned by all the calculate executions , returns 1 value for each similiarity value.
+        4- over that array we get the bayesian mean values.
+        Compares similarity between 2 same language corpora (eg: wiki/tw).
         :param corpus:
         :return:
         """
-        if isinstance(corpus, SimilarityCorpus):
-            return corpus.corpus, corpus.language
-        return corpus, 'eng'
+        sample1 = self.get_samples(corpora_list1, chunk_size, n_pairs)
+        sample2 = self.get_samples(corpora_list2, chunk_size, n_pairs)
+        result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
+        return scipy.stats.bayes_mvs(result)
+
+    def calculate_similiarity_unique(self, corpus1):
+        """
+        same as corpus_similiartiy but with chunks of itself.
+        :param corpus1:
+        :return:
+        """
+        pass
 
     #-------------------------------------------------
     def calculate(self, corpus1, corpus2):
-        corpus1, language1 = self.get_corpus_metadata(corpus1)
-        corpus2, language2 = self.get_corpus_metadata(corpus2)
 
-        lines1 = self.loads[language1].load(corpus1)
-        lines2 = self.loads[language2].load(corpus2)
+        lines1 = self.Load.load(corpus1)
+        lines2 = self.Load.load(corpus2)
 
-        features1 = self.get_features(lines1, language1)
-        features2 = self.get_features(lines2, language2)
+        features1 = self.get_features(lines1)
+        features2 = self.get_features(lines2)
 
-        features1 = spearmanr(features1)[0]
-        features2 = spearmanr(features2)[0]
+        value = spearmanr(features1, features2)[0]
 
-        value = spearmanr(features1, features2)
-
-
-        return stats.bayes_mvs(value)
+        return value
 
 #===============================================================================
 #Class for loading and cleaning text data
