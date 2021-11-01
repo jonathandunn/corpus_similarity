@@ -123,8 +123,7 @@ if not os.path.isdir( SCALER_PATH ) :
 class Similarity(object):
 
     languages = []
-    loads = {}
-    scalers = {}
+    scaler = None
     vectorizers = {}
 
     def __init__(self, language, threshold=1000000, feature_source="out"):
@@ -132,7 +131,7 @@ class Similarity(object):
         self.threshold = threshold
         self.language = language
         self.get_languages_features()
-        self.get_scaler()
+        self.scaler = self.get_scaler()
 
     def get_languages_features(self):
         self.Load = Load(self.language, self.threshold)
@@ -189,7 +188,7 @@ class Similarity(object):
 
     def scale(self, values):
         if self.scaler:
-            return self.scaler.transform([values, 1])
+            return self.scaler.transform([[values, 1]])
         return values
 
     #--------------------------------------------------
@@ -217,9 +216,8 @@ class Similarity(object):
         sampler.get_dataframes(corpora_list)
         acum = []
         for i in range(n):
-            sample = sampler.get_sample(chunk_size, acumulative_dfs=acum)
-            acum.append(sample)
-        return acum
+            acum.append(sampler.get_sample(chunk_size, acumulative_dfs=acum))
+        return [self.df_as_list(a) for a in acum]
 
     def df_as_list(self, df):
         return [str(x) for x in df.loc[:, 'Text'].values]
@@ -236,8 +234,7 @@ class Similarity(object):
         """
         sample1 = self.get_samples(corpora_list1, chunk_size, n_pairs)
         sample2 = self.get_samples(corpora_list2, chunk_size, n_pairs)
-        result = [self.scale(self.calculate(self.df_as_list(sample1[i]),
-                                            self.df_as_list(sample2[i]))) for i in range(len(sample1))]
+        result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
         return scipy.stats.bayes_mvs(result)
 
     def calculate_similiarity_unique(self, corpus1):
