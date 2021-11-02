@@ -1,10 +1,13 @@
 from collections import namedtuple
+from polyglot.text import Text, Word
 import pandas as pd
 import math
 import random
 
 SamplerDataframe = namedtuple('SamplerDataframe', ['dataframe', 'mean_words'])
 
+def count_words(row):
+    return len(Text(row['Text']).words)
 
 class Sampler(object):
     language = None
@@ -14,7 +17,10 @@ class Sampler(object):
     def get_dataframes(self, dataframes):
         for f in dataframes:
             df = pd.read_csv(f)
+            df['count'] = df.apply(count_words, axis=1)
+            import pdb;pdb.set_trace()
             self.full_dataframes.append(SamplerDataframe(df, self.get_mean_words(df)))
+
 
     def get_mean_words(self, df):
         return df['count'].mean()
