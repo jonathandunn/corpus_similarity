@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
 	name = "corpus_similarity",
-	version = "1.0.8",
+	version = "1.0.9",
 	author = "Jonathan Dunn, Haipeng Li",
 	author_email = "jonathan.dunn@canterbury.ac.nz",
 	description = ("Measuring corpus similarity in Python"),

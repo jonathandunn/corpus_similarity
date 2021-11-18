@@ -10,6 +10,8 @@ nlp = spacy.load('xx_sent_ud_sm')
 SamplerDataframe = namedtuple('SamplerDataframe', ['dataframe', 'mean_words'])
 
 def count_words(row):
+    if isinstance(row['Text'], float):
+        return 0
     doc = nlp(row['Text'])
     return len([token.text for token in doc])
 
