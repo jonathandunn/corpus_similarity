@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
 	name = "corpus_similarity",
-	version = "1.0.9",
+	version = "1.0.10",
 	author = "Jonathan Dunn, Haipeng Li",
 	author_email = "jonathan.dunn@canterbury.ac.nz",
 	description = ("Measuring corpus similarity in Python"),
@@ -26,6 +26,8 @@ setup(
 						"clean-text",
 						"scipy",
 						"sklearn",
+					  	"spacy",
+
 						],
 	include_package_data=True,
 	long_description=read('README.md'),

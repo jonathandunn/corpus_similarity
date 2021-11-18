@@ -1,13 +1,19 @@
 from collections import namedtuple
-from polyglot.text import Text, Word
 import pandas as pd
 import math
 import random
 import spacy
 
-nlp = spacy.load('xx_sent_ud_sm')
+try:
+    nlp = spacy.load('xx_sent_ud_sm')
+except OSError:
+    print('Downloading language model for the spaCy for word Count')
+    from spacy.cli import download
+    download('xx_sent_ud_sm')
+    nlp = spacy.load('xx_sent_ud_sm')
 
 SamplerDataframe = namedtuple('SamplerDataframe', ['dataframe', 'mean_words'])
+
 
 def count_words(row):
     if isinstance(row['Text'], float):
@@ -24,9 +30,7 @@ class Sampler(object):
         for f in dataframes:
             df = pd.read_csv(f)
             df['count'] = df.apply(count_words, axis=1)
-            import pdb;pdb.set_trace()
             self.full_dataframes.append(SamplerDataframe(df, self.get_mean_words(df)))
-
 
     def get_mean_words(self, df):
         return df['count'].mean()
