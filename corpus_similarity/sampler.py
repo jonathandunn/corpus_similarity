@@ -3,6 +3,9 @@ import pandas as pd
 import math
 import random
 import spacy
+import logging
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 try:
     nlp = spacy.load('xx_sent_ud_sm')
@@ -27,10 +30,14 @@ class Sampler(object):
     full_df = None
 
     def get_dataframes(self, dataframes):
+        logging.info('Fetching Data Frames')
         for f in dataframes:
             df = pd.read_csv(f)
+            logging.info('Calculating number of words for {}'.format(f))
             df['count'] = df.apply(count_words, axis=1)
-            self.full_dataframes.append(SamplerDataframe(df, self.get_mean_words(df)))
+            mean_words = self.get_mean_words(df)
+            logging.info('{} Mean Words: {}'.format(f, mean_words))
+            self.full_dataframes.append(SamplerDataframe(df, mean_words))
 
     def get_mean_words(self, df):
         return df['count'].mean()
@@ -47,6 +54,8 @@ class Sampler(object):
         random_df = self.full_dataframes[random.randrange(0, len(self.full_dataframes))]
 
         amount_to_search = amount if not current_amount else current_amount
+        logging.debug('Getting sample: {}'.format(amount_to_search))
+
         num_rows = math.ceil(amount_to_search/random_df.mean_words)
 
         new_df = random_df.dataframe.sample(n=num_rows)
@@ -67,5 +76,6 @@ class Sampler(object):
                                    current_amount=current_amount,
                                    current_df=current_df,
                                    acumulative_dfs=acumulative_dfs)
+        logging.debug('Sample fetched with {} words'.format(sum_words))
 
         return new_df
