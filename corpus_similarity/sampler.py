@@ -3,11 +3,15 @@ from polyglot.text import Text, Word
 import pandas as pd
 import math
 import random
+import spacy
+
+nlp = spacy.load('xx_sent_ud_sm')
 
 SamplerDataframe = namedtuple('SamplerDataframe', ['dataframe', 'mean_words'])
 
 def count_words(row):
-    return len(Text(row['Text']).words)
+    doc = nlp(row['Text'])
+    return len([token.text for token in doc])
 
 class Sampler(object):
     language = None
