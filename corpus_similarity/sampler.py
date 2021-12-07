@@ -60,13 +60,12 @@ class Sampler(object):
 
         new_df = self.remove_extra_duplicates(new_df, acumulative_dfs)
         sum_words = new_df['count'].sum()
-
-        if sum_words <= (amount*-1.001):
+        if sum_words <= amount-(amount*0.01):
             return self.get_sample(amount,
                                    current_amount=amount-sum_words,
                                    current_df=new_df,
                                    acumulative_dfs=acumulative_dfs)
-        if sum_words >= (amount*1.001):
+        if sum_words >= (amount*1.01):
             return self.get_sample(amount,
                                    current_amount=current_amount,
                                    current_df=current_df,
