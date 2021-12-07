@@ -2,27 +2,17 @@ from collections import namedtuple
 import pandas as pd
 import math
 import random
-import spacy
 import logging
+import gzip
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-try:
-    nlp = spacy.load('xx_sent_ud_sm')
-except OSError:
-    print('Downloading language model for the spaCy for word Count')
-    from spacy.cli import download
-    download('xx_sent_ud_sm')
-    nlp = spacy.load('xx_sent_ud_sm')
-
 SamplerDataframe = namedtuple('SamplerDataframe', ['dataframe', 'mean_words'])
-
 
 def count_words(row):
     if isinstance(row['Text'], float):
         return 0
-    doc = nlp(row['Text'])
-    return len([token.text for token in doc])
+    return len(row['Text'].split())
 
 class Sampler(object):
     language = None
@@ -38,6 +28,14 @@ class Sampler(object):
             mean_words = self.get_mean_words(df)
             logging.info('{} Mean Words: {}'.format(f, mean_words))
             self.full_dataframes.append(SamplerDataframe(df, mean_words))
+
+    def build_dataframe_from_gzip(self, origin, destination):
+        logging.info('opening file {}'.format(origin))
+        data = gzip.open(origin, "rb").readlines()
+        df = pd.DataFrame({'Text': data})
+        logging.info('saving new df to  {}'.format(destination))
+        df.to_csv(destination, index=False, compression='gzip')
+        logging.info('new df saved')
 
     def get_mean_words(self, df):
         return df['count'].mean()
@@ -66,12 +64,12 @@ class Sampler(object):
         new_df = self.remove_extra_duplicates(new_df, acumulative_dfs)
         sum_words = new_df['count'].sum()
 
-        if sum_words <= (amount*-1.1):
+        if sum_words <= (amount*-1.08):
             return self.get_sample(amount,
                                    current_amount=amount-sum_words,
                                    current_df=new_df,
                                    acumulative_dfs=acumulative_dfs)
-        if sum_words >= (amount*1.1):
+        if sum_words >= (amount*1.08):
             return self.get_sample(amount,
                                    current_amount=current_amount,
                                    current_df=current_df,
