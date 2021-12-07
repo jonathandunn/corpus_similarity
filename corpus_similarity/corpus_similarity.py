@@ -229,7 +229,6 @@ class Similarity(object):
         3- scale the array returned by all the calculate executions , returns 1 value for each similiarity value.
         4- over that array we get the bayesian mean values.
         Compares similarity between 2 same language corpora (eg: wiki/tw).
-        :param corpus:
         :return:
         """
         sample1 = self.get_samples(corpora_list1, chunk_size, n_pairs)

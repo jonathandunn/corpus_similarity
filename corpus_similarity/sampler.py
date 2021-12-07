@@ -42,10 +42,7 @@ class Sampler(object):
 
     def remove_extra_duplicates(self, df, acumulative_dfs):
         for a_df in acumulative_dfs:
-            merged_data = df.merge(a_df,
-                                   how='inner',
-                                   on='article_id')['article_id']
-            df = df[~df['article_id'].isin(merged_data)]
+            df = df[~df.index.isin(a_df.index)]
         return df
 
     def get_sample(self, amount, current_amount=None, current_df=None, acumulative_dfs=None):
@@ -64,12 +61,12 @@ class Sampler(object):
         new_df = self.remove_extra_duplicates(new_df, acumulative_dfs)
         sum_words = new_df['count'].sum()
 
-        if sum_words <= (amount*-1.08):
+        if sum_words <= (amount*-1.001):
             return self.get_sample(amount,
                                    current_amount=amount-sum_words,
                                    current_df=new_df,
                                    acumulative_dfs=acumulative_dfs)
-        if sum_words >= (amount*1.08):
+        if sum_words >= (amount*1.001):
             return self.get_sample(amount,
                                    current_amount=current_amount,
                                    current_df=current_df,
