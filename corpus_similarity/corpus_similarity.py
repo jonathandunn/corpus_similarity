@@ -248,6 +248,21 @@ class Similarity(object):
         result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
         return scipy.stats.bayes_mvs(result)
 
+    def calculate_training_similarity(self, test_corpora, training_corpora, chunk_size=2000, n_pairs=100):
+        """
+        Calculates similarity with given standard training set.
+        :param test_corpora:
+        :param training_corpora:
+        :param chunk_size:
+        :param n_pairs:
+        :return:
+        """
+        if len(training_corpora) != n_pairs:
+            raise Exception('Training corpora must have same size as n_pairs')
+
+        samples = self.get_samples([test_corpora], chunk_size, n_pairs*2)
+        result = [self.scale(self.calculate(samples[i], training_corpora[i])) for i in range(len(samples))]
+        return scipy.stats.bayes_mvs(result)
     #-------------------------------------------------
     def calculate(self, corpus1, corpus2):
 
