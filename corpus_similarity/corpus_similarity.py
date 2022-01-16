@@ -235,8 +235,39 @@ class Similarity(object):
         sample2 = self.get_samples(corpora_list2, chunk_size, n_pairs)
         result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
         return scipy.stats.bayes_mvs(result)
+ 
 
-    def calculate_similiarity_(self, corpora_list, chunk_size=20000, n_pairs=100):
+
+    # "calculate_similarity2" is similar with "calculate_similarity" function, 
+    # but return original result list of similarity values and its scaled value list.  
+    def calculate_similarity2(self, corpora_list1, corpora_list2, chunk_size=20000, n_pairs=100):
+        """
+        1- break corpora into 20k word subsets ( non overlapping ). (optional: add parameters with chunk size)
+        2- get a N amount of pairs, run calculate for each of this pair-chunks comparisons.
+        3- scale the array returned by all the calculate executions , returns 1 value for each similiarity value.
+        4- over that array we get the bayesian mean values.
+        Compares similarity between 2 same language corpora (eg: wiki/tw).
+        :return:
+        """
+        sample1 = self.get_samples(corpora_list1, chunk_size, n_pairs)
+        sample2 = self.get_samples(corpora_list2, chunk_size, n_pairs)
+                
+        result_scale_ = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]       
+        result_ori = [self.calculate(sample1[i], sample2[i]) for i in range(len(sample1))]
+          
+          
+        for i in range(len(result_ori)):
+            result_ori[i] = round(result_ori[i], 2)            
+            
+        result_scale = []
+        for i in range(len(result_scale_)):
+            result_scale.append( round(result_scale_[i][0][0], 2) )
+                       
+        return result_ori, result_scale     
+      
+
+
+    def calculate_similarity_(self, corpora_list, chunk_size=20000, n_pairs=100):
         """
         same as corpus_similiartiy but with chunks of itself.
         :param corpus1:
@@ -247,7 +278,37 @@ class Similarity(object):
         sample2 = samples[len(samples) // 2:]
         result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
         return scipy.stats.bayes_mvs(result)
+      
+      
+    # "calculate_similarity_2" is similar with "calculate_similarity_" function, 
+    # but return original result list of similarity values and its scaled value list.      
+    def calculate_similarity_2(self, corpora_list, chunk_size=20000, n_pairs=100):
+        """
+        same as corpus_similiartiy but with chunks of itself.
+        :param corpus1:
+        :return:
+        """
+        samples = self.get_samples(corpora_list, chunk_size, n_pairs*2)
+        sample1 = samples[:len(samples) // 2]
+        sample2 = samples[len(samples) // 2:]
+        
+        # result = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
 
+        result_scale_ = [self.scale(self.calculate(sample1[i], sample2[i])) for i in range(len(sample1))]
+        
+        result_ori = [self.calculate(sample1[i], sample2[i]) for i in range(len(sample1))]
+
+        for i in range(len(result_ori)):
+            result_ori[i] = round(result_ori[i], 2)            
+            
+        result_scale = []
+        for i in range(len(result_scale_)):
+            result_scale.append( round(result_scale_[i][0][0], 2) )
+                       
+        return result_ori, result_scale      
+      
+
+      
     def calculate_training_similarity(self, test_corpora, training_corpora, chunk_size=2000, n_pairs=100):
         """
         Calculates similarity with given standard training set.
