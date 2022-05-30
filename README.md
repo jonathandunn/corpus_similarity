@@ -1,6 +1,6 @@
 # corpus_similarity
 
-Measure the similarity between two corpora (text datasets). The measures work best when each corpus is at least 10k words.
+Measure the similarity between two corpora (text datasets). The measures work best when each corpus is at least 10k words. This package support 74 languages.
 
     from corpus_similarity import Similarity
     cs = Similarity(language = "eng")
@@ -25,100 +25,150 @@ The output is a scalar measure of how similar the two corpora are. The values fa
     
 # Languages
 
-**Pacific Languages**
+amh, Amharic
 
-haw,    Hawaiian (Polynesian)
+ara, Arabic
 
-mri,    te reo (Polynesian)
+aze, Azerbaijani
 
-smo,    Samoan (Polynesian)
+ben, Bengali
 
-ton,    Tongan (Polynesian)
+bul, Bulgarian
 
-ceb,    Cebuano (Austronesian)
+cat, Catalan
 
-mlg,    Malagasy (Austronesian)
+ceb, Cebuano
 
-msa,    Malay (Austronesian)
+ces, Czech
 
-tgl,    Tagalog (Austronesian)
+cha, Chamorro
 
-**Other Languages**
+dan, Danish
 
-vie,	Vietnamese
+deu, German
 
-ind,	Indonesian
+ell, Greek
 
-tgl,	Tagalog
+eng, English
 
-tam,	Tamil
+est, Estonian
 
-tel,	Telugu
+eus, Basque
 
-bul,	Bulgarian
+fas, Farsi
 
-ces,	Czech
+fij, Fijian
 
-lav,	Latvian
+fin, Finnish
 
-pol,	Polish
+fra, French
 
-rus,	Russian
+gle, Gaelic
 
-slv,	Slovenian
+glg, Galician
 
-ukr,	Ukrainian
+guj, Gujarati
 
-dan,	Danish
+hat, Hatian
 
-deu,	German
+haw, Hawaiian
 
-eng,	English
+heb, Hebrew
 
-nld,	Dutch
+hin, Hindi
 
-nor,	Norwegian
+hmo, Hiri Motu
 
-swe,	Swedish
+hun, Hungarian
 
-ell,	Greek
+ilo, Ilocano
 
-fas,	Farsi
+ind, Indonesian
 
-hin,	Hindi
+isl, Icelandic
 
-urd,	Urdu
+ita, Italian
 
-cat,	Catalan
+jav, Javanese
 
-fra,	French
+jpn, Japanese
 
-glg,	Galician
+kan, Kannada
 
-ita,	Italian
+kat, Georgian
 
-por,	Portuguese
+kor, Korean
 
-ron,	Romanian
+lav, Latvian
 
-spa,	Spanish
+lit, Lithuanian
 
-jpn,	Japanese
+mal, Malayalam
 
-kor,	Korean
+mar, Marathi
 
-ara,	Arabic
+mkd, Macedonian
 
-heb,	Hebrew
+mlg, Malagasy
 
-zho,	Chinese
+mon, Mongolian
 
-tha,	Thai
+mri, te reo Māori
 
-tur,	Turkish
+msa, Malay
 
-est,	Estonian
+nld, Dutch
 
-fin,	Finnish
+nor, Norwegian
 
-hun,	Hungarian
+pan, Punjabi
+
+pol, Polish
+
+por, Portuguese
+
+ron, Romanian
+
+rus, Russian
+
+sin, Sinhala
+
+slk, Slovak
+
+slv, Slovenian
+
+smo, Samoan
+
+som, Somali
+
+spa, Spanish
+
+sqi, Albanian
+
+swe, Swedish
+
+tah, Tahitian
+
+tam, Tamil
+
+tel, Telugu
+
+tgl, Tagalog
+
+tha, Thai
+
+ton, Tongan
+
+tur, Turkish
+
+tvl, Tuvaluan
+
+ukr, Ukrainian
+
+urd, Urdu
+
+uzb, Uzbek
+
+vie, Vietnamese
+
+zho, Chinese
