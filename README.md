@@ -23,6 +23,12 @@ The output is a scalar measure of how similar the two corpora are. The values fa
 
     pip install git+https://github.com/jonathandunn/corpus_similarity.git
     
+# How It Works
+
+The corpus similarity measure is a simple character n-gram comparison, with the best performance coming with using Spearman's Rho as a measure of correlation. The original idea for this kind of corpus comparison comes from Adam Kilgarriff (https://kilgarriff.co.uk/Publications/2001-K-CompCorpIJCL.pdf). 
+
+Recent work in *Lingua* has evaluated the measures used in this package extensively in a multi-lingual setting (https://arxiv.org/abs/2206.04332). These measures have since been used to model the relationship between registers in a multi-lingual setting (https://arxiv.org/abs/2209.09813) and to validate geo-referenced corpus collections (https://arxiv.org/abs/2104.01294). Other work has modelled the relationship between corpus similarity (upstream) and embedding similarity (downstream) (https://arxiv.org/abs/2206.04330). These papers provide further details for the theory and evaluation behind this package.
+    
 # Languages
 
 amh, Amharic
