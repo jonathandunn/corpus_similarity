@@ -22,7 +22,7 @@ setup(
 						"numpy",
 						"clean-text",
 						"scipy",
-						"sklearn",
+						"scikit-learn",
 						],
 	include_package_data=True,
 	long_description=read('README.md'),
